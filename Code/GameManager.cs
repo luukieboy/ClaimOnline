@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 // Hoi future Luuk, ik was problemenen aan het oplossen hier met toevoegan aan de hand en zorgen dat alles gebeurt voor het volgende gebeurt, dus veel coroutines en updaten van bools. Kijk maar ff of je het beter kan maken, hopelijk was de vakantie leuk!
-
+// Ff kieken waarvoor gamemanager de info van players nodig heeft en of ik dat niet gewoon locaal kan doen.
 
 
 public class GameManager : AttributesSync
@@ -22,6 +22,7 @@ public class GameManager : AttributesSync
     public Settings settings;
     public PlayerInfo localPlayer;
     public ushort playerNumber;
+    public bool readyToContinue = false;
 
 
     private List<Card> cardPile;
@@ -36,6 +37,16 @@ public class GameManager : AttributesSync
             new Color(255, 0, 0),
             new Color(255, 0, 213),
             new Color(30, 0, 255)};
+
+    [SynchronizableField]
+    private bool firstRound = false;
+    [SynchronizableField]
+    private int numberToBeat = 0;
+    [SynchronizableField]
+    private int valueToBeat = 0;
+    [SynchronizableField]
+    private int winnerPlayerIndex = 0;
+
 
     void Start()
     {
@@ -58,71 +69,90 @@ public class GameManager : AttributesSync
 
     private IEnumerator SetupGame()
     {
-        BroadcastRemoteMethod("ChangeScene");
-        yield return new WaitForSeconds(0.05f);
+        BroadcastRemoteMethod("ChangeScene", "MainGameScene");
+        yield return new WaitForSeconds(0.2f);
+        foreach (User user in multiplayer.GetUsers()) InvokeRemoteMethod("PlayerSetupForGame", user.Index);
         BroadcastRemoteMethod("DeletePlayers");
         cardSpawner = GameObject.Find("CardSpawner").GetComponent<CardSpawner>();
         InvokeRemoteMethod("HostSetupForGame", settings.hostId);
-        yield return new WaitForSeconds(7);
-        foreach (User user in multiplayer.GetUsers()) InvokeRemoteMethod("PlayerSetupForGame", user.Index);
-        yield return new WaitForSeconds(2f);
+        while (!readyToContinue) yield return new WaitForSeconds(0.01f);
+        readyToContinue = false;
         StartCoroutine(StartFirstPhase());
-
     }
 
     private IEnumerator StartFirstPhase()
     {
-        Debug.Log(cardPile.Count + "   " + players[0].currentHand.Count);
-        while (cardPile.Count != 0 && players[0].currentHand.Count != 0)
+        firstRound = true;
+        while (cardPile.Count != 0 && localPlayer.currentHand.Count != 0)
         {
             Card card = cardPile[0];
-            cardSpawner.spawnCardInMiddle(card, 0);
+            BroadcastRemoteMethod("SpawnCardSomewhere", card.faction, card.value, (ushort)0, 4);
 
             StartCoroutine(CreateRoundInfo());
-            while (!roundInfoCreated) yield return new WaitForSeconds(0.3f);
+            while (!roundInfoCreated) yield return new WaitForSeconds(0.1f);
             roundInfoCreated = false;
 
             PlayerInfo winner = DetermineWinnerFirstPhase();
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
             yield return new WaitForSeconds(3f);
             StartCoroutine(MoveCardsFirstPhase(winner.user.Index));
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(0.5f);
 
             // Switch order of playing
             players.Remove(winner);
             players.Insert(0, winner);
             foreach (PlayerInfo player in players) InvokeRemoteMethod("SetPlayerNumber", player.user.Index, players.IndexOf(player));
 
-            yield return new WaitForSeconds(1f);
-            cardPile.Remove(card);
+            yield return new WaitForSeconds(0.2f);
         }
+        yield return new WaitForSeconds(1f);
+        firstRound = false;
         SetupSecondPhase();
     }
 
     private void SetupSecondPhase()
     {
         BroadcastRemoteMethod("DestroyObjectForSecondPhase");
-        foreach (PlayerInfo player in players) player.SetupSecondPhase();
+        foreach (PlayerInfo player in players) InvokeRemoteMethod("SetupForSecondPhasePlayer", player.user.Index);
         StartCoroutine(StartSecondPhase());
     }
 
     private IEnumerator StartSecondPhase()
     {
+        yield return new WaitForSeconds(0.5f);
         for (int i = 0; i < maxAmount; i++)
         {
             StartCoroutine(CreateRoundInfo());
-            while (!roundInfoCreated) yield return new WaitForSeconds(0.3f);
+            while (!roundInfoCreated) yield return new WaitForSeconds(0.1f);
             roundInfoCreated = false;
+
             PlayerInfo winner = DetermineWinnerSecondPhase();
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
             yield return new WaitForSeconds(3f);
             MoveCardsSecondPhase(winner.user.Index);
+            yield return new WaitForSeconds(0.5f);
+
 
             // Switch order of playing
             players.Remove(winner);
             players.Insert(0, winner);
             foreach (PlayerInfo player in players) InvokeRemoteMethod("SetPlayerNumber", player.user.Index, players.IndexOf(player));
+            yield return new WaitForSeconds(0.2f);
         }
+        gameStarted = false;
+        BroadcastRemoteMethod("DeletePlayerMats");
+        StartCoroutine(DetermineFinalWinner());
+        yield return new WaitForSeconds(20f);
+        BroadcastRemoteMethod("UnloadScenes");
+        ResetGame();
+    }
+
+    private void ResetGame()
+    {
+        numberToBeat = 0;
+        valueToBeat = 0;
+        winnerPlayerIndex = 0;
+        cardPile = new List<Card>();
     }
 
     private IEnumerator CreateRoundInfo()
@@ -135,21 +165,18 @@ public class GameManager : AttributesSync
             {
                 yield return new WaitForSeconds(0.3f);
             }
-            Card cardInfo = player.PlayCard();
-            roundInfo.Add(new PlayerRoundInfo(player, cardInfo));
+            roundInfo.Add(new PlayerRoundInfo(player, player.cardPlayed));
+            player.cardPlayed = null;
         }
         roundInfoCreated = true;
     }
 
     private IEnumerator MoveCardsFirstPhase(ushort winnerIndex)
     {
-        // Move all Undead cards to the winners victory pile
-        if (roundInfo.FirstOrDefault(info => info.user.user.Index == winnerIndex)?.playedCard.faction == "Undead")
+        // Move all played Undead cards to the winners victory pile
+        foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
         {
-            foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
-            {
-                if (playerRoundInfo.playedCard.faction == "Undead") cardSpawner.spawnCardInVictoryHand(playerRoundInfo.playedCard, winnerIndex);
-            }
+            if (playerRoundInfo.playedCard.faction == "Undead") InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -178,14 +205,12 @@ public class GameManager : AttributesSync
         PlayerInfo winnerIndex = null;
 
         // Knight wins if played after Goblin
-        if (leadingFaction == "Goblin")
+        if (leadingFaction == "Goblins")
         {
-            // BUG
             foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
             {
-                if (playerRoundInfo.playedCard.faction == "Knight")
+                if (playerRoundInfo.playedCard.faction == "Knights")
                 {
-                    Debug.Log("Knight after goblin");
                     if (winnerIndex == null || (winnerIndex != null && playerRoundInfo.playedCard.value > valueToBeat))
                     {
                         winnerIndex = playerRoundInfo.user;
@@ -214,13 +239,15 @@ public class GameManager : AttributesSync
 
     private void MoveCardsSecondPhase(ushort winnerIndex)
     {
+        // DEBUGGING / SINGLEPLAYER MODE
+        // ushort loserIndex = winnerIndex;
         ushort loserIndex = roundInfo.FirstOrDefault(info => info.user.user.Index != winnerIndex).user.user.Index;
         {
             foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
             {
                 // If dwarves are played, give them to the loser
-                if (playerRoundInfo.playedCard.faction == "Dwarves") cardSpawner.spawnCardInVictoryHand(playerRoundInfo.playedCard, loserIndex);
-                else cardSpawner.spawnCardInVictoryHand(playerRoundInfo.playedCard, winnerIndex);
+                if (playerRoundInfo.playedCard.faction == "Dwarves") InvokeRemoteMethod("SpawnCardSomewhere", loserIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, loserIndex, 3);
+                else InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
             }
         }
 
@@ -233,10 +260,50 @@ public class GameManager : AttributesSync
         return DetermineWinnerFirstPhase();
     }
 
+    public IEnumerator DetermineFinalWinner()
+    {
+        foreach (string currentFaction in settings.chosenSets)
+        {
+            PlayerInfo winnerPlayer = null;
+            foreach (PlayerInfo player in players)
+            {
+                InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
+                yield return new WaitForSeconds(0.2f);
+                if (player.user.Index == winnerPlayerIndex) winnerPlayer = player;
+            }
+            winnerPlayer.winningSets.Add(currentFaction);
+        }
+
+        ushort winnerIndex = (ushort)0;
+        int winningAmount = 0;
+        BroadcastRemoteMethod("ChangeScene", "VictoryScene");
+        yield return new WaitForSeconds(0.2f);
+        foreach (PlayerInfo player in players)
+        {
+            if (player.winningSets.Count > winningAmount)
+                {
+                    winningAmount = player.winningSets.Count;
+                    winnerIndex = player.user.Index;
+                }
+        }
+
+        foreach (PlayerInfo player in players)
+        {
+            string victoryMessage = "";
+            if (player.user.Index == winnerIndex) victoryMessage = "You won! \n";
+            else victoryMessage = "You lost :( \n";
+
+            string wonSetsText = "Decks you won : ";
+            foreach (string factionWon in player.winningSets) wonSetsText += factionWon + ", ";
+            if (player.winningSets.Count == 0) wonSetsText += "none";
+            InvokeRemoteMethod("WriteVictoryMessage", player.user.Index, victoryMessage, wonSetsText);
+        }
+    }
+
     private void GiveNextCardInDeckToBattleHand(ushort Id)
     {
         Card card = cardPile[0];
-        cardSpawner.spawnCardInBattleHand(card, Id);
+        InvokeRemoteMethod("SpawnCardSomewhere", Id, card.faction, card.value, Id, 2);
         cardPile.Remove(card);
     }
 
@@ -302,12 +369,12 @@ public class GameManager : AttributesSync
             foreach (PlayerInfo player in players)
             {
                 randomCard = cardPile[UnityEngine.Random.Range(0, cardPile.Count)];
-                InvokeRemoteMethod("ClientAddToHand", player.user.Index, randomCard.faction, randomCard.value);
-                cardSpawner.spawnCardInHand(randomCard, player.user.Index);
+                InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
                 yield return new WaitForSeconds(0.1f);
                 cardPile.Remove(randomCard);
             }
         }
+        readyToContinue = true;
     }
 
     public (GameObject objectOfInterest, bool done) getObjectWithTag(Transform parent, string tag)
@@ -326,6 +393,53 @@ public class GameManager : AttributesSync
         return output;
     }
 
+    public void MoveCardToMiddle(Card cardInfo, ushort Id)
+    {
+        BroadcastRemoteMethod("SpawnCardSomewhere", cardInfo.faction, cardInfo.value, (ushort)(Id + 1), 4);
+    }
+
+    [SynchronizableMethod]
+    public void UnloadScenes()
+    {
+        SceneManager.UnloadScene("MainGameScene");
+        SceneManager.UnloadScene("VictoryScene");
+    }
+    
+    [SynchronizableMethod]
+    public void DeletePlayerMats()
+    {
+        Destroy(GameObject.Find("PlayerMat"));
+    }
+
+    [SynchronizableMethod]
+    public void GetFactionNumbers(string currentFaction)
+    {
+        int playerNumberOfCards = 0;
+        int playerHighestValue = 0;
+
+        foreach (Card card in localPlayer.victoryPile)
+        {
+            if (card.faction == currentFaction) playerNumberOfCards += 1;
+            if (card.value > playerHighestValue) playerHighestValue = card.value;
+        }
+
+        if (playerNumberOfCards > numberToBeat || (playerNumberOfCards == numberToBeat && playerHighestValue > valueToBeat))
+        {
+            numberToBeat = playerNumberOfCards;
+            numberToBeat = playerHighestValue;
+            winnerPlayerIndex = playerNumber;
+        }
+    }
+
+    [SynchronizableMethod]
+    public void WriteVictoryMessage(string victoryMessage, string wonSetsText)
+    {
+        GameObject.Find("VictoryText").GetComponent<TMP_Text>().text = victoryMessage;
+        GameObject.Find("VictoryText").GetComponent<TMP_Text>().color = Color.white;
+        GameObject.Find("WonSets").GetComponent<TMP_Text>().text = wonSetsText;
+        GameObject.Find("WonSets").GetComponent<TMP_Text>().color = Color.white;
+    }
+
     [SynchronizableMethod]
     public void ClientAddToHand(string faction, int value)
     {
@@ -334,9 +448,9 @@ public class GameManager : AttributesSync
     }
 
     [SynchronizableMethod]
-    public void ChangeScene()
+    public void ChangeScene(string sceneName)
     {
-        SceneManager.LoadScene("MainGameScene", LoadSceneMode.Additive);
+        SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
     }
 
     [SynchronizableMethod]
@@ -352,7 +466,7 @@ public class GameManager : AttributesSync
     [SynchronizableMethod]
     public void HostSetupForGame()
     {
-        Debug.Log("Are we good?? " + (settings.amountOfPeople == players.Count));
+        // Debug.Log("Are we good?? " + (settings.amountOfPeople == players.Count));
         players.Shuffle();
         foreach (PlayerInfo player in players) InvokeRemoteMethod("SetPlayerNumber", player.user.Index, players.IndexOf(player));
         createCardPile();
@@ -365,9 +479,9 @@ public class GameManager : AttributesSync
     public void PlayerSetupForGame()
     {
         gameStarted = true;
-        text = getObjectWithTag(GameObject.Find("CardSpawner").transform, "playerNumber").objectOfInterest.GetComponent<TMP_Text>();
-        localPlayer.SetupForGame();
         cardSpawner = GameObject.Find("CardSpawner").GetComponent<CardSpawner>();
+        text = getObjectWithTag(cardSpawner.transform, "playerNumber").objectOfInterest.GetComponent<TMP_Text>();
+        localPlayer.SetupForGame();
     }
 
     [SynchronizableMethod]
@@ -379,13 +493,13 @@ public class GameManager : AttributesSync
     [SynchronizableMethod]
     public void ShowWinner(ushort Id)
     {
-        getObjectWithTag(cardSpawner.gameObject.transform, "playedCard" + Id.ToString()).objectOfInterest.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
+        getObjectWithTag(cardSpawner.transform, "playedCard" + Id.ToString()).objectOfInterest.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
     }
 
     [SynchronizableMethod]
     public void DestroyCards()
     {
-        Destroy(getObjectWithTag(cardSpawner.transform, "cardPlayingFor").objectOfInterest);
+        if (firstRound) Destroy(getObjectWithTag(cardSpawner.transform, "cardPlayingFor").objectOfInterest);
         for (int i = 0; i < multiplayer.GetUsers().Count; i++)
         {
             Destroy(getObjectWithTag(cardSpawner.transform, "playedCard" + i.ToString()).objectOfInterest);
@@ -396,9 +510,9 @@ public class GameManager : AttributesSync
     public void SetPlayerNumber(ushort number)
     {
         playerNumber = number;
-        if (text == null) text = getObjectWithTag(GameObject.Find("CardSpawner").transform, "playerNumber").objectOfInterest.GetComponent<TMP_Text>();
+        if (text == null) text = getObjectWithTag(cardSpawner.transform, "playerNumber").objectOfInterest.GetComponent<TMP_Text>();
         text.text = "Player " + (number + 1).ToString();
-        getObjectWithTag(cardSpawner.gameObject.transform, "playerMat").objectOfInterest.GetComponent<SpriteRenderer>().color = playerColours[number];
+        getObjectWithTag(cardSpawner.transform, "playerMat").objectOfInterest.GetComponent<SpriteRenderer>().color = playerColours[number];
     }
 
     [SynchronizableMethod]
@@ -406,9 +520,32 @@ public class GameManager : AttributesSync
     {
         for (int i = 0; i < 2; i++)
         {
-            GameObject objectGameOf = getObjectWithTag(cardSpawner.gameObject.transform, "destroyable" + i.ToString()).objectOfInterest;
+            GameObject objectGameOf = getObjectWithTag(cardSpawner.transform, "destroyable" + i.ToString()).objectOfInterest;
             if (objectGameOf != null) Destroy(objectGameOf);
         }
-        
+        Transform victoryPileTrans = GameObject.Find("Victory pile").transform;
+        victoryPileTrans.localScale = new Vector3(0.307f, 2f, 1);
+        victoryPileTrans.position = new Vector3(7.07f, 0.7f, 0);
+    }
+
+    [SynchronizableMethod]
+    public void SpawnCardSomewhere(string faction, int value, ushort Id, int place)
+    {
+        if (place == 1) cardSpawner.spawnCardInHand(new Card(faction, value), Id);
+        else if (place == 2) cardSpawner.spawnCardInBattleHand(new Card(faction, value), Id);
+        else if (place == 3) cardSpawner.spawnCardInVictoryHand(new Card(faction, value), Id);
+        else if (place == 4) cardSpawner.spawnCardInMiddle(new Card(faction, value), Id);
+    }
+
+    [SynchronizableMethod]
+    public void SetupForSecondPhasePlayer()
+    {
+        localPlayer.currentHand = new List<Card>();
+        foreach (Card card in localPlayer.armyPile)
+        {
+            SpawnCardSomewhere(card.faction, card.value, playerNumber, 1);
+            card.DestroyCard();
+        }
+        localPlayer.armyPile = new List<Card>();
     }
 }

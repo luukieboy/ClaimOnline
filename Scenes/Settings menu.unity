@@ -205,18 +205,6 @@ MonoBehaviour:
   OnRoomLeft:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 152334919}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: ResetPlayerList
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
       - m_Target: {fileID: 1088281416}
         m_TargetAssemblyTypeName: Settings, Assembly-CSharp
         m_MethodName: ResetOnLeave
@@ -249,19 +237,7 @@ MonoBehaviour:
       m_Calls: []
   OnOtherUserLeft:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 152334919}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: ResetPlayerList
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnJoinRejected:
     m_PersistentCalls:
       m_Calls: []
@@ -368,6 +344,8 @@ MonoBehaviour:
   cardPrefab: {fileID: 8894530759134474241, guid: 071925a6bfaa56c4ebc5010264b7ff94, type: 3}
   cardSpawner: {fileID: 0}
   settings: {fileID: 0}
+  playerNumber: 0
+  readyToContinue: 0
 --- !u!4 &152334920
 Transform:
   m_ObjectHideFlags: 0

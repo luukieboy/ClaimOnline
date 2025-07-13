@@ -17,6 +17,7 @@ public class PlayerCode : AttributesSync
     private Multiplayer multi;
     private List<Transform> touchedObjects = new List<Transform>();
     private CardSpawner cardSpawner;
+    private GameObject cardPlayedObject;
 
     void Start()
     {
@@ -42,6 +43,9 @@ public class PlayerCode : AttributesSync
                 if (!setupDone)
                 {
                     multi = gameManager.settings.multiplayer;
+                    touchedObjects = new List<Transform>();
+                    playerInfo = new PlayerInfo(avatar.Owner);
+                    gameManager.localPlayer = playerInfo;
                     setupDone = true;
                 }
 
@@ -59,7 +63,7 @@ public class PlayerCode : AttributesSync
                         {
                             resetHits();
                         }
-                        if (playerInfo.cardPlayed == null || (playerInfo.cardPlayed != null && playerInfo.cardPlayed != hit.collider.gameObject))
+                        if (playerInfo.cardPlayed == null || (playerInfo.cardPlayed != null && cardPlayedObject != hit.collider.gameObject))
                         {
                             touchedObjects.Add(hit.collider.transform);
                         }
@@ -69,20 +73,22 @@ public class PlayerCode : AttributesSync
                 {
                     resetHits();
                 }
-
                 if (hit.collider != null && Input.GetMouseButtonDown(0) && hit.collider.CompareTag("Card") && allowedToPlay)
                 {
-                    if (playerInfo.cardPlayed != null) touchedObjects.Add(playerInfo.cardPlayed.transform);
-                    playerInfo.cardPlayed = hit.collider.gameObject;
-                    Card card = playerInfo.cardPlayed.GetComponent<CardDisplay>().card;
-                    gameManager.cardSpawner.MoveCardToMiddle(gameManager.playerNumber, playerInfo.cardPlayed);
+                    if (cardPlayedObject != null) touchedObjects.Add(cardPlayedObject.transform);
+                    cardPlayedObject = hit.collider.gameObject;
+                    Card card = cardPlayedObject.GetComponent<CardDisplay>().card;
+                    gameManager.localPlayer.currentHand.Remove(card);
+                    InvokeRemoteMethod("AddPlayedCard", gameManager.settings.hostId, card.faction, card.value, gameManager.playerNumber);
                     while (touchedObjects.Contains(hit.collider.transform))
                     {
                         touchedObjects.Remove(hit.collider.transform);
                     }
                     allowedToPlay = false;
+                    Destroy(cardPlayedObject);
                 }
             }
+            else setupDone = false;
         }
     }
 
@@ -98,7 +104,17 @@ public class PlayerCode : AttributesSync
     [SynchronizableMethod]
     public void AddToPlayerList()
     {
+        if (avatar == null) avatar = GetComponent<Alteruna.Avatar>();
         PlayerInfo newPlayerInfo = new PlayerInfo(avatar.Owner);
         gameManager.players.Add(newPlayerInfo);
     }
+
+    [SynchronizableMethod]
+    public void AddPlayedCard(string faction, int value, ushort userId)
+    {
+        Card cardPlayed = new Card(faction, value);
+        gameManager.MoveCardToMiddle(cardPlayed, userId);
+        gameManager.players[userId].cardPlayed = cardPlayed;
+    }
 }
+

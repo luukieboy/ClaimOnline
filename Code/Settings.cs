@@ -75,6 +75,7 @@ public class Settings : AttributesSync
 
     public void UpdateOnChangingUsers()
     {
+        amountOfPeople = multiplayer.GetUsers().Count;
         if (amITheHost)
         {
             CalculateAmountOfCards();

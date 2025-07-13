@@ -197,7 +197,7 @@ Transform:
   m_GameObject: {fileID: 28442353}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.020019531, y: 5.0200043, z: 0}
+  m_LocalPosition: {x: -0.020019531, y: 5.0200043, z: -20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -442,7 +442,7 @@ GameObject:
   - component: {fileID: 341823935}
   - component: {fileID: 341823933}
   m_Layer: 0
-  m_Name: Victory pile (1)
+  m_Name: BattlePile
   m_TagString: destroyable1
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -458,7 +458,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 8.18, y: -1.47, z: 0}
-  m_LocalScale: {x: 4.0110807, y: 4.9070034, z: 1}
+  m_LocalScale: {x: 4, y: 4.9070034, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1897236158}
@@ -1039,16 +1039,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1066567577}
-  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalRotation: {x: -0, y: -0, z: 0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.47619048, y: 0.32258067, z: 1}
+  m_LocalScale: {x: 0.5563495, y: 0.09925556, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1425956475}
+  m_Father: {fileID: 1611579814}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.495, y: 0.013}
+  m_AnchoredPosition: {x: 0.5471425, y: 1.2054794}
   m_SizeDelta: {x: 2.0864, y: 0.6729}
   m_Pivot: {x: 0.50000185, y: 0.49999833}
 --- !u!114 &1066567579
@@ -1590,12 +1590,11 @@ Transform:
   m_GameObject: {fileID: 1425956474}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 8.179981, y: 3.6600046, z: 0}
-  m_LocalScale: {x: 4.0110807, y: 4.9070034, z: 1}
+  m_LocalPosition: {x: 0.69945025, y: 1.1902912, z: 0}
+  m_LocalScale: {x: 0.3076923, y: 1.1683341, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1066567578}
-  m_Father: {fileID: 2076657613}
+  m_Children: []
+  m_Father: {fileID: 1611579814}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1425956476
 MonoBehaviour:
@@ -1891,6 +1890,39 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1513339887}
   m_CullTransparentMesh: 1
+--- !u!1 &1611579813
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1611579814}
+  m_Layer: 0
+  m_Name: Victory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1611579814
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1611579813}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.9128723, y: -1.3392181, z: 0}
+  m_LocalScale: {x: 13, y: 4.2, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1425956475}
+  - {fileID: 1066567578}
+  m_Father: {fileID: 2076657613}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1701738890
 GameObject:
   m_ObjectHideFlags: 0
@@ -2137,7 +2169,7 @@ Transform:
   m_Children:
   - {fileID: 506245563}
   - {fileID: 8508387694202024002}
-  - {fileID: 1425956475}
+  - {fileID: 1611579814}
   - {fileID: 341823932}
   - {fileID: 8508387694382499968}
   - {fileID: 8508387693083885679}
@@ -2592,7 +2624,7 @@ Transform:
   m_GameObject: {fileID: 8894530759443608528}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.9128723, y: -1.3392181, z: 0}
+  m_LocalPosition: {x: -0.9128723, y: -1.3392181, z: 0.01}
   m_LocalScale: {x: 13, y: 4.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

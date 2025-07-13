@@ -5,11 +5,12 @@ using System.Collections;
 
 public class PlayerInfo
 {
-    public GameObject cardPlayed;
+    public Card cardPlayed;
     public User user;
     public List<Card> currentHand;
     public List<Card> victoryPile;
     public List<Card> armyPile;
+    public List<string> winningSets = new List<string>();
 
     private CardSpawner cardSpawner;
     private GameManager gameManager;
@@ -23,6 +24,7 @@ public class PlayerInfo
         currentHand = new List<Card>();
         victoryPile = new List<Card>();
         armyPile = new List<Card>();
+        winningSets = new List<string>();
     }
 
     public void SetupForGame()
@@ -31,23 +33,24 @@ public class PlayerInfo
         cardSpawner = gameManager.cardSpawner;
     }
 
-    public Card PlayCard()
+    public void PlayCard()
     {
-        Card cardInfo = cardPlayed.GetComponent<CardDisplay>().card;
-        foreach (Card card in currentHand)
-        {
-            if (card.faction == cardInfo.faction && card.value == cardInfo.value)
-            {
-                currentHand.Remove(card);
-                break;
-            }
-        }
-        currentHand.Remove(cardInfo);
-        return cardInfo;
+        // Card cardInfo = cardPlayed.GetComponent<CardDisplay>().card;
+        // foreach (Card card in currentHand)
+        // {
+        //     if (card.faction == cardInfo.faction && card.value == cardInfo.value)
+        //     {
+        //         currentHand.Remove(card);
+        //         break;
+        //     }
+        // }
+        currentHand.Remove(cardPlayed);
+        // return cardInfo;
     }
 
     public void SetupSecondPhase()
     {
+        currentHand = new List<Card>();
         foreach (Card card in armyPile)
         {
             gameManager.cardSpawner.spawnCardInHand(card, user.Index);
@@ -55,6 +58,7 @@ public class PlayerInfo
             card.DestroyCard();
             // armyPile.Remove(card);
         }
+        armyPile = null;
     }
     public void addToHand(Card cardInfo)
     {
@@ -92,4 +96,6 @@ public class PlayerInfo
         }
         currentHand = tempCardHand;
     }
+
+
 }
