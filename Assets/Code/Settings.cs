@@ -150,7 +150,7 @@ public class Settings : AttributesSync
         foreach (string extensionFile in Directory.GetFiles("C:/Users/Luuk/Documents/Aangenaaide bestanden/SpaceJammer/Claim/Assets/Code/Decks"))
         {
             multipleCardName = "";
-            if (extensionFile.Contains(".meta")) continue;
+            if (extensionFile.Contains(".meta") || extensionFile.Contains("claim2")) continue;
             lines = File.ReadAllLines(extensionFile);
             foreach (string line in lines)
             {
