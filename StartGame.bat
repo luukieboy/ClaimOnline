@@ -1,0 +1,6 @@
+@echo off
+echo Updating game ...
+git pull
+echo Launching game ...
+start "" "Builds\Claim.exe"
+pause
