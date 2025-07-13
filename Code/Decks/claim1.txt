@@ -1,5 +1,0 @@
-<s> Knights, 2-9
-<s> Goblins, 5x0, 1-9
-Dwarves, 0-9
-Doppelgängers, 0-9
-Undead, 0-9
