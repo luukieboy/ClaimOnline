@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 public class PlayerCode : AttributesSync
 {
+    // Here is all code that relates to the player, each client runs their own code.
     public GameObject cardPrefab;
     public PlayerInfo playerInfo;
     public bool allowedToPlay = false;
@@ -28,7 +29,7 @@ public class PlayerCode : AttributesSync
         {
             setupDone = false;
             playerInfo = new PlayerInfo(avatar.Owner);
-            gameManager.localPlayer = playerInfo;
+            gameManager.localPlayer = playerInfo; // Local player is used for each client to alter their playerInfo
             InvokeRemoteMethod("AddToPlayerList", gameManager.settings.hostId);
         }
     }
@@ -50,15 +51,15 @@ public class PlayerCode : AttributesSync
                 }
 
                 Vector2 mousePosition = GameObject.Find("secondCamera").GetComponent<Camera>().ScreenToWorldPoint(Input.mousePosition);
-                Vector2 direction = Vector2.zero; // zero vector for point-check (click/hover detection)
+                Vector2 direction = Vector2.zero; 
                 RaycastHit2D hit = Physics2D.Raycast(mousePosition, direction);
 
                 if (hit.collider != null)
                 {
+                    // While hovering over a card, enlarge it
                     if (hit.collider.CompareTag("Card"))
                     {
                         hit.collider.transform.localScale = new Vector3(3.5f, 5, 1);
-                        // highlight card, trigger animation, etc.
                         if (touchedObjects.Count > 0 && touchedObjects[touchedObjects.Count - 1].position != hit.collider.transform.position)
                         {
                             resetHits();
@@ -69,12 +70,11 @@ public class PlayerCode : AttributesSync
                         }
                     }
                 }
-                else
-                {
-                    resetHits();
-                }
+                else resetHits();
+
                 if (hit.collider != null && Input.GetMouseButtonDown(0) && hit.collider.CompareTag("Card") && allowedToPlay)
                 {
+                    // When clicking on a card, select it to be played and keep it enlarged
                     if (cardPlayedObject != null) touchedObjects.Add(cardPlayedObject.transform);
                     cardPlayedObject = hit.collider.gameObject;
                     Card card = cardPlayedObject.GetComponent<CardDisplay>().card;
@@ -112,6 +112,7 @@ public class PlayerCode : AttributesSync
     [SynchronizableMethod]
     public void AddPlayedCard(string faction, int value, ushort userId)
     {
+        // Called to the host, so they know what card each client plays
         Card cardPlayed = new Card(faction, value);
         gameManager.MoveCardToMiddle(cardPlayed, userId);
         gameManager.players[userId].cardPlayed = cardPlayed;

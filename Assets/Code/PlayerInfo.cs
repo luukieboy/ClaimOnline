@@ -5,6 +5,7 @@ using System.Collections;
 
 public class PlayerInfo
 {
+    // All information that is needed from the player is stored here
     public Card cardPlayed;
     public User user;
     public List<Card> currentHand;
@@ -33,40 +34,21 @@ public class PlayerInfo
         cardSpawner = gameManager.cardSpawner;
     }
 
-    public void PlayCard()
-    {
-        // Card cardInfo = cardPlayed.GetComponent<CardDisplay>().card;
-        // foreach (Card card in currentHand)
-        // {
-        //     if (card.faction == cardInfo.faction && card.value == cardInfo.value)
-        //     {
-        //         currentHand.Remove(card);
-        //         break;
-        //     }
-        // }
-        currentHand.Remove(cardPlayed);
-        // return cardInfo;
-    }
-
     public void SetupSecondPhase()
     {
         currentHand = new List<Card>();
         foreach (Card card in armyPile)
         {
             gameManager.cardSpawner.spawnCardInHand(card, user.Index);
-            addToHand(card);
+            currentHand.Add(card);
             card.DestroyCard();
-            // armyPile.Remove(card);
         }
-        armyPile = null;
-    }
-    public void addToHand(Card cardInfo)
-    {
-        currentHand.Add(cardInfo);
+        armyPile = new List<Card>();
     }
 
     private void sortCards()
     {
+        // Potentially upcoming update, sort the cards in your hand on faction and value
         List<Card> tempCardHand = new List<Card>();
         List<string> factionNames = new List<string>();
 
@@ -96,6 +78,4 @@ public class PlayerInfo
         }
         currentHand = tempCardHand;
     }
-
-
 }

@@ -3,6 +3,8 @@ using TMPro;
 
 public class CardDisplay : MonoBehaviour
 {
+    // CardDisplay does everything related to how cards are displayed. Changes in appearance can be made here.
+    // CardDisplay is also the bridge between Card and the physical object in Unity
     public Card card;
 
     private TMP_Text text;
