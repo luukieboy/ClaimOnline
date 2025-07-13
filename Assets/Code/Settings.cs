@@ -147,7 +147,7 @@ public class Settings : AttributesSync
         string[] lines;
         string multipleCardName;
 
-        foreach (string extensionFile in Directory.GetFiles("C:/Users/Luuk/Documents/Aangenaaide bestanden/SpaceJammer/Claim/Assets/Code/Decks"))
+        foreach (string extensionFile in Directory.GetFiles(Directory.GetCurrentDirectory() + "/Assets/Code/Decks"))
         {
             multipleCardName = "";
             if (extensionFile.Contains(".meta") || extensionFile.Contains("claim2")) continue;
