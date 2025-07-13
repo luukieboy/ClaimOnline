@@ -5,4 +5,4 @@ git checkout removeDoubleFiles
 git pull origin main
 
 echo "Launching game..."
-./Build/LinuxClaim.x86_64
+./Builds/LinuxClaim.x86_64
