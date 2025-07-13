@@ -333,7 +333,7 @@ public class GameManager : AttributesSync
 
         foreach (string chosenSet in Settings.Instance.chosenSets)
         {
-            foreach (string extensionFile in Directory.GetFiles("C:/Users/Luuk/Documents/Aangenaaide bestanden/SpaceJammer/Claim/Assets/Code/Decks"))
+            foreach (string extensionFile in Directory.GetFiles(Directory.GetCurrentDirectory() + "/Assets/Code/Decks"))
             {
                 if (extensionFile.Contains(".meta")) continue;
                 lines = File.ReadAllLines(extensionFile);
