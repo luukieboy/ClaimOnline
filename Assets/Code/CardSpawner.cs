@@ -1,6 +1,6 @@
 using UnityEngine;
 using Alteruna;
-using System;   
+using System;
 
 public class CardSpawner : AttributesSync
 {
@@ -49,5 +49,10 @@ public class CardSpawner : AttributesSync
         if (size != Vector3.zero) newCard.GetComponent<Transform>().localScale = size;
         if (newTag != "NO") newCard.tag = newTag;
         return newCard.GetComponent<CardDisplay>().card;
+    }
+
+    public void QuitGame()
+    {
+        gameManager.QuitGame();
     }
 }

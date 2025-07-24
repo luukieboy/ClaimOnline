@@ -412,13 +412,19 @@ public class GameManager : AttributesSync
         BroadcastRemoteMethod("SpawnCardSomewhere", cardInfo.faction, cardInfo.value, (ushort)(Id + 1), 4);
     }
 
+    public void QuitGame()
+    {
+        UnloadScenes();
+        ResetGame();
+    }
+
     [SynchronizableMethod]
     public void UnloadScenes()
     {
         SceneManager.UnloadScene("MainGameScene");
         SceneManager.UnloadScene("VictoryScene");
     }
-    
+
     [SynchronizableMethod]
     public void DeletePlayerMats()
     {
