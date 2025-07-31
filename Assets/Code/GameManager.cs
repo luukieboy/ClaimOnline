@@ -268,10 +268,13 @@ public class GameManager : AttributesSync
             foreach (PlayerInfo player in players)
             {
                 InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(5f);
                 if (player.user.Index == winnerPlayerIndex) winnerPlayer = player;
+                Debug.Log(currentFaction, "  ", winnerPlayer);
+                yield return new WaitForSeconds(0.2f);
             }
             winnerPlayer.winningSets.Add(currentFaction);
+            yield return new WaitForSeconds(0.2f);
         }
 
         ushort winnerIndex = (ushort)0;
@@ -280,11 +283,12 @@ public class GameManager : AttributesSync
         yield return new WaitForSeconds(0.2f);
         foreach (PlayerInfo player in players)
         {
+            Debug.Log(player.user.Index, "  ", player.winningSets.Count);
             if (player.winningSets.Count > winningAmount)
-                {
-                    winningAmount = player.winningSets.Count;
-                    winnerIndex = player.user.Index;
-                }
+            {
+                winningAmount = player.winningSets.Count;
+                winnerIndex = player.user.Index;
+            }
         }
 
         foreach (PlayerInfo player in players)
