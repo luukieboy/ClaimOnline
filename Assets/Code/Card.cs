@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Card
 {
-    // Add cardDisplay here for easier sorting and moving around cards
+    // Each card has a value and faction which are vital for the game. A cardDisplay is added to easily find the card.
     public string faction;
     public int value;
 

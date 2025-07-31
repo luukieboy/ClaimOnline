@@ -7,6 +7,8 @@ using System;
 
 public class CardsCheckBox : AttributesSync
 {
+    // This code is on the checkboxes in the starting screen and is made to ensure synchronisation accross clients
+    // of selected decks
     private Settings settingsScript;
     private Toggle m_Toggle;
     private bool updatingToggle = false;
@@ -18,6 +20,7 @@ public class CardsCheckBox : AttributesSync
 
     public void boolChanged()
     {
+        // Called when a tickbox is clicked
         settingsScript.UpdateToggle(Int32.Parse(gameObject.name), gameObject.GetComponent<Toggle>().isOn);
         if (settingsScript.amITheHost) ChangeTheBool();
     }

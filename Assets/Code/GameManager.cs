@@ -8,12 +8,11 @@ using Alteruna;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// Hoi future Luuk, ik was problemenen aan het oplossen hier met toevoegan aan de hand en zorgen dat alles gebeurt voor het volgende gebeurt, dus veel coroutines en updaten van bools. Kijk maar ff of je het beter kan maken, hopelijk was de vakantie leuk!
-// Ff kieken waarvoor gamemanager de info van players nodig heeft en of ik dat niet gewoon locaal kan doen.
-
-
 public class GameManager : AttributesSync
 {
+    // Here all things after the game has started are handled. Yes, it's a mess :)
+    // Only the host runs most of the code
+
     public bool gameStarted;
     public Multiplayer multiplayer;
     public GameObject cardPrefab;
@@ -29,7 +28,6 @@ public class GameManager : AttributesSync
     private int maxAmount;
     private List<PlayerRoundInfo> roundInfo = new List<PlayerRoundInfo>();
     private bool amITheHost;
-    private PlayerInfo currentPlayer;
     private TMP_Text text;
     private bool roundInfoCreated = false;
     private List<Color> playerColours = new List<Color>{
@@ -72,8 +70,11 @@ public class GameManager : AttributesSync
         BroadcastRemoteMethod("ChangeScene", "MainGameScene");
         yield return new WaitForSeconds(0.2f);
         foreach (User user in multiplayer.GetUsers()) InvokeRemoteMethod("PlayerSetupForGame", user.Index);
+        // Delete the additional objects for more players than are in the current lobby
         BroadcastRemoteMethod("DeletePlayers");
         cardSpawner = GameObject.Find("CardSpawner").GetComponent<CardSpawner>();
+        // Potential improvement for optimisation
+        // HostSetupForGame();
         InvokeRemoteMethod("HostSetupForGame", settings.hostId);
         while (!readyToContinue) yield return new WaitForSeconds(0.01f);
         readyToContinue = false;
@@ -86,13 +87,16 @@ public class GameManager : AttributesSync
         while (cardPile.Count != 0 && localPlayer.currentHand.Count != 0)
         {
             Card card = cardPile[0];
+            // Spawn card in the middle from the top of the cardpile
             BroadcastRemoteMethod("SpawnCardSomewhere", card.faction, card.value, (ushort)0, 4);
 
+            // Get the card each players has played this round
             StartCoroutine(CreateRoundInfo());
             while (!roundInfoCreated) yield return new WaitForSeconds(0.1f);
             roundInfoCreated = false;
 
             PlayerInfo winner = DetermineWinnerFirstPhase();
+            // Highlight the winner in green
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
             yield return new WaitForSeconds(3f);
             StartCoroutine(MoveCardsFirstPhase(winner.user.Index));
@@ -112,6 +116,7 @@ public class GameManager : AttributesSync
 
     private void SetupSecondPhase()
     {
+        // Destroy the battle hand objects and objects related to the first phase for a clear distinction between phases
         BroadcastRemoteMethod("DestroyObjectForSecondPhase");
         foreach (PlayerInfo player in players) InvokeRemoteMethod("SetupForSecondPhasePlayer", player.user.Index);
         StartCoroutine(StartSecondPhase());
@@ -122,11 +127,13 @@ public class GameManager : AttributesSync
         yield return new WaitForSeconds(0.5f);
         for (int i = 0; i < maxAmount; i++)
         {
+            // Get the card each players has played this round
             StartCoroutine(CreateRoundInfo());
             while (!roundInfoCreated) yield return new WaitForSeconds(0.1f);
             roundInfoCreated = false;
 
             PlayerInfo winner = DetermineWinnerSecondPhase();
+            // Highlight the winner in green
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
             yield return new WaitForSeconds(3f);
             MoveCardsSecondPhase(winner.user.Index);
@@ -140,9 +147,12 @@ public class GameManager : AttributesSync
             yield return new WaitForSeconds(0.2f);
         }
         gameStarted = false;
+        // HOTFIX Delete players mats as they bugged out when switching scenes
         BroadcastRemoteMethod("DeletePlayerMats");
         StartCoroutine(DetermineFinalWinner());
         yield return new WaitForSeconds(20f);
+
+        // Return to the main menu and reset parameters
         BroadcastRemoteMethod("UnloadScenes");
         ResetGame();
     }
@@ -161,10 +171,7 @@ public class GameManager : AttributesSync
         foreach (PlayerInfo player in players)
         {
             InvokeRemoteMethod("AllowPlayerToPlay", player.user.Index, player.user.Name);
-            while (player.cardPlayed == null)
-            {
-                yield return new WaitForSeconds(0.3f);
-            }
+            while (player.cardPlayed == null) yield return new WaitForSeconds(0.15f);
             roundInfo.Add(new PlayerRoundInfo(player, player.cardPlayed));
             player.cardPlayed = null;
         }
@@ -183,15 +190,11 @@ public class GameManager : AttributesSync
 
         // Move the middle card to the winners pile
         GiveNextCardInDeckToBattleHand(winnerIndex);
-        // yield return new WaitForSeconds(0.5f);
 
         // Give every other player a card from the pile
         foreach (PlayerInfo player in players)
         {
-            if (player.user.Index != winnerIndex)
-            {
-                GiveNextCardInDeckToBattleHand(player.user.Index);
-            }
+            if (player.user.Index != winnerIndex) GiveNextCardInDeckToBattleHand(player.user.Index);
         }
 
         // Destroy all cards played
@@ -239,14 +242,14 @@ public class GameManager : AttributesSync
 
     private void MoveCardsSecondPhase(ushort winnerIndex)
     {
-        // DEBUGGING / SINGLEPLAYER MODE
-        // ushort loserIndex = winnerIndex;
+        // ushort loserIndex = winnerIndex; // DEBUGGING
         ushort loserIndex = roundInfo.FirstOrDefault(info => info.user.user.Index != winnerIndex).user.user.Index;
         {
             foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
             {
                 // If dwarves are played, give them to the loser
                 if (playerRoundInfo.playedCard.faction == "Dwarves") InvokeRemoteMethod("SpawnCardSomewhere", loserIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, loserIndex, 3);
+                // Give all other cards to the winner
                 else InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
             }
         }
@@ -257,11 +260,13 @@ public class GameManager : AttributesSync
 
     private PlayerInfo DetermineWinnerSecondPhase()
     {
+        // For now the same as first phase, will edit when adding extensions
         return DetermineWinnerFirstPhase();
     }
 
     public IEnumerator DetermineFinalWinner()
     {
+        // Determine the winner of each faction
         foreach (string currentFaction in settings.chosenSets)
         {
             PlayerInfo winnerPlayer = null;
@@ -278,15 +283,17 @@ public class GameManager : AttributesSync
         int winningAmount = 0;
         BroadcastRemoteMethod("ChangeScene", "VictoryScene");
         yield return new WaitForSeconds(0.2f);
+
+        // Determine who has won the most factions
         foreach (PlayerInfo player in players)
         {
             if (player.winningSets.Count > winningAmount)
-                {
-                    winningAmount = player.winningSets.Count;
-                    winnerIndex = player.user.Index;
-                }
+            {
+                winningAmount = player.winningSets.Count;
+                winnerIndex = player.user.Index;
+            }
         }
-
+        // Create a message for each player based on how they did
         foreach (PlayerInfo player in players)
         {
             string victoryMessage = "";
@@ -307,8 +314,10 @@ public class GameManager : AttributesSync
         cardPile.Remove(card);
     }
 
+    // Remove for optimisation?
     public void ChangePlayerList()
     {
+        // Called when the Room list updates (alteruna)
         if (amITheHost)
         {
             foreach (PlayerInfo player in players)
@@ -324,7 +333,7 @@ public class GameManager : AttributesSync
 
         foreach (string chosenSet in Settings.Instance.chosenSets)
         {
-            foreach (string extensionFile in Directory.GetFiles("C:/Users/Luuk/Documents/Aangenaaide bestanden/SpaceJammer/Claim/Assets/Code/Decks"))
+            foreach (string extensionFile in Directory.GetFiles(Directory.GetCurrentDirectory() + "/Assets/Code/Decks"))
             {
                 if (extensionFile.Contains(".meta")) continue;
                 lines = File.ReadAllLines(extensionFile);
@@ -340,6 +349,9 @@ public class GameManager : AttributesSync
     {
         string[] factionInfo = line.Split(",");
         string factionName = factionInfo[0];
+
+        // <s> are for card sets that are linked together (e.g. Knights and Goblins)
+        // This is used to distinguish them between single card decks and combined in Settings : GetAllCardNames
         if (factionName.Contains("<s>")) factionName = factionName.Split("<s>")[1].Trim();
         foreach (string factionInfoPart in factionInfo.Skip(1))
         {
@@ -368,6 +380,7 @@ public class GameManager : AttributesSync
         {
             foreach (PlayerInfo player in players)
             {
+                // Give each player a random card from the cardpile
                 randomCard = cardPile[UnityEngine.Random.Range(0, cardPile.Count)];
                 InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
                 yield return new WaitForSeconds(0.1f);
@@ -379,6 +392,7 @@ public class GameManager : AttributesSync
 
     public (GameObject objectOfInterest, bool done) getObjectWithTag(Transform parent, string tag)
     {
+        // Easily find objects with a tag given their parent object
         (GameObject objectOfInterest, bool done) output = (gameObject, false);
 
         foreach (Transform child in parent)
@@ -398,13 +412,19 @@ public class GameManager : AttributesSync
         BroadcastRemoteMethod("SpawnCardSomewhere", cardInfo.faction, cardInfo.value, (ushort)(Id + 1), 4);
     }
 
+    public void QuitGame()
+    {
+        UnloadScenes();
+        ResetGame();
+    }
+
     [SynchronizableMethod]
     public void UnloadScenes()
     {
         SceneManager.UnloadScene("MainGameScene");
         SceneManager.UnloadScene("VictoryScene");
     }
-    
+
     [SynchronizableMethod]
     public void DeletePlayerMats()
     {
@@ -441,13 +461,6 @@ public class GameManager : AttributesSync
     }
 
     [SynchronizableMethod]
-    public void ClientAddToHand(string faction, int value)
-    {
-        Card newCard = new Card(faction, value);
-        localPlayer.addToHand(newCard);
-    }
-
-    [SynchronizableMethod]
     public void ChangeScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
@@ -466,9 +479,10 @@ public class GameManager : AttributesSync
     [SynchronizableMethod]
     public void HostSetupForGame()
     {
-        // Debug.Log("Are we good?? " + (settings.amountOfPeople == players.Count));
+        // Assign randomly a starting player
         players.Shuffle();
         foreach (PlayerInfo player in players) InvokeRemoteMethod("SetPlayerNumber", player.user.Index, players.IndexOf(player));
+
         createCardPile();
         cardPile.Shuffle();
         maxAmount = cardPile.Count / (2 * Math.Max(2, Settings.Instance.amountOfPeople));
@@ -509,6 +523,7 @@ public class GameManager : AttributesSync
     [SynchronizableMethod]
     public void SetPlayerNumber(ushort number)
     {
+        // Set player number in top left and change color of PlayerMat accordingly
         playerNumber = number;
         if (text == null) text = getObjectWithTag(cardSpawner.transform, "playerNumber").objectOfInterest.GetComponent<TMP_Text>();
         text.text = "Player " + (number + 1).ToString();

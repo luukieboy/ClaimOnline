@@ -9,6 +9,7 @@ using Alteruna;
 
 public class Settings : AttributesSync
 {
+    // Most of the things that happen in the main screen is handled here
     public static Settings Instance;
 
     public List<string> chosenSets;
@@ -61,20 +62,24 @@ public class Settings : AttributesSync
     {
         if (amITheHost)
         {
+            // Hosts recalculates how many decks are needed and the player text
             CalculateAmountOfCards();
             BroadcastRemoteMethod("UpdatePlayersJoined");
         }
+        // Create the check boxes only when you have joined a room
         createToggles();
         foreach (User user in multiplayer.GetUsers()) if (user.IsHost) hostId = user.Index;
     }
 
     public void ResetOnLeave()
     {
+        // Called when player leaves the room
         DestroyToggles();
     }
 
     public void UpdateOnChangingUsers()
     {
+        // Called when the Room list updates (alteruna)
         amountOfPeople = multiplayer.GetUsers().Count;
         if (amITheHost)
         {
@@ -85,6 +90,7 @@ public class Settings : AttributesSync
 
     public void UpdateToggle(int toggleId, bool toggleMode)
     {
+        // When ticking a tickbox, change it for all other users
         foreach (User user in multiplayer.GetUsers())
         {
             if (user.Index != multiplayer.Me.Index) InvokeRemoteMethod("UpdateToggleOnClient", user.Index, toggleId, toggleMode);
@@ -104,6 +110,17 @@ public class Settings : AttributesSync
         amountOfCardsNeeded = (amountOfPeople == 2 || amountOfPeople == 1) ? 3 : 5;
         amountOfCardsNeeded -= CountSingleCardDecks();
         BroadcastRemoteMethod("SetAmountOfCardsNeeded");
+    }
+
+    private int CountSingleCardDecks()
+    {
+        int i = 0;
+
+        foreach (string chosenSet in chosenSets)
+        {
+            if (!doubleSets.Contains(chosenSet.Trim())) i++;
+        }
+        return i;
     }
 
     public void createToggles()
@@ -130,22 +147,17 @@ public class Settings : AttributesSync
         string[] lines;
         string multipleCardName;
 
-        foreach (string extensionFile in Directory.GetFiles("C:/Users/Luuk/Documents/Aangenaaide bestanden/SpaceJammer/Claim/Assets/Code/Decks"))
+        foreach (string extensionFile in Directory.GetFiles(Directory.GetCurrentDirectory() + "/Assets/Code/Decks"))
         {
             multipleCardName = "";
-            if (extensionFile.Contains(".meta"))
-            {
-                continue;
-            }
+            if (extensionFile.Contains(".meta") || extensionFile.Contains("claim2")) continue;
             lines = File.ReadAllLines(extensionFile);
             foreach (string line in lines)
             {
                 if (line.Contains("<s>"))
                 {
-                    if (multipleCardName != "")
-                    {
-                        multipleCardName += " & ";
-                    }
+                    // Combine the two linked decks
+                    if (multipleCardName != "") multipleCardName += " & ";
                     multipleCardName += line.Split("<s>")[1].Split(",")[0].Trim();
                     doubleSets.Add(line.Split("<s>")[1].Split(",")[0].Trim());
                     continue;
@@ -157,17 +169,6 @@ public class Settings : AttributesSync
         return cardNames;
     }
 
-    private int CountSingleCardDecks()
-    {
-        int i = 0;
-
-        foreach (string chosenSet in chosenSets)
-        {
-            if (!doubleSets.Contains(chosenSet.Trim())) i++;
-        }
-        return i;
-    }
-
     public void CreateAndNameToggle(string cardName)
     {
         GameObject toggle;
@@ -176,11 +177,13 @@ public class Settings : AttributesSync
 
         if (cardName.Contains("&"))
         {
+            // Spawn linked decks on the left
             toggle = Instantiate(togglePrefab, doubleCardLocationSpawn - correction, Quaternion.identity);
             doubleCardLocationSpawn.y -= distanceBetweenToggles;
         }
         else
         {
+            // Spawn single decks on the right
             toggle = Instantiate(togglePrefab, singleCardLocationSpawn - correction, Quaternion.identity);
             singleCardLocationSpawn.y -= distanceBetweenToggles;
         }

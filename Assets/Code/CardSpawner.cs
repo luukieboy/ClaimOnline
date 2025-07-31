@@ -1,15 +1,13 @@
 using UnityEngine;
 using Alteruna;
-using System;   
+using System;
 
 public class CardSpawner : AttributesSync
 {
+    // All card spawning is handled here
     public GameObject cardPrefab;
     private GameManager gameManager;
-    private GameObject newCard = null;
 
-    private int handToAddTo = 4;
-    private ushort playerId;
 
     void Start()
     {
@@ -41,15 +39,9 @@ public class CardSpawner : AttributesSync
         int victoryHandSize = gameManager.localPlayer.victoryPile.Count;
         gameManager.localPlayer.victoryPile.Add(spawnCardAtLocation(cardInfo, new Vector3(6f + 0.4f * victoryHandSize - 2.8f * (victoryHandSize / 7), 3.8f - 2.5f * (victoryHandSize / 7), 0.0f - victoryHandSize * 0.3f), new Vector3(1.5f, 2, 1), "NO"));
     }
-
-    private PlayerInfo FindPlayer(ushort Id)
-    {
-        foreach (PlayerInfo player in gameManager.players) if (player.user.Index == Id) return player;
-        return null;
-    }
     public Card spawnCardAtLocation(Card cardInfo, Vector3 location, Vector3 size, string newTag)
     {
-        newCard = Instantiate(cardPrefab, location, Quaternion.identity);
+        GameObject newCard = Instantiate(cardPrefab, location, Quaternion.identity);
         CardDisplay cardDisplay = newCard.GetComponent<CardDisplay>();
         newCard.GetComponent<CardDisplay>().initialize(cardInfo);
         cardInfo.setCardDisplay(cardDisplay);
@@ -57,5 +49,10 @@ public class CardSpawner : AttributesSync
         if (size != Vector3.zero) newCard.GetComponent<Transform>().localScale = size;
         if (newTag != "NO") newCard.tag = newTag;
         return newCard.GetComponent<CardDisplay>().card;
+    }
+
+    public void QuitGame()
+    {
+        gameManager.QuitGame();
     }
 }

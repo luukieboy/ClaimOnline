@@ -1,3 +1,29 @@
+# Unity-generated folders
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
+[Ll]ogs/
+MemoryCaptures/
+UserSettings/
+
+# Rider/VSCode/Visual Studio project files
+*.csproj
+*.sln
+*.user
+*.unityproj
+*.pidb
+*.booproj
+*.suo
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# JetBrains
+.idea/
+.vscode/
