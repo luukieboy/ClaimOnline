@@ -24,6 +24,7 @@ public class Settings : AttributesSync
     private List<Toggle> toggleObjects;
     private List<string> cardNames;
     private TMP_Text amountOfCardsText;
+    private GameManager gameManager;
 
     [SynchronizableField]
     public int amountOfCardsNeeded;
@@ -42,7 +43,7 @@ public class Settings : AttributesSync
     }
     void Start()
     {
-        GameManager gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
         doubleSets = new List<string>();
         playerText = gameManager.getObjectWithTag(gameObject.GetComponent<Transform>(), "playerText").objectOfInterest.GetComponent<TMP_Text>();
         amountOfCardsText = gameManager.getObjectWithTag(gameObject.GetComponent<Transform>(), "cardPicker").objectOfInterest.GetComponent<TMP_Text>();
@@ -64,7 +65,7 @@ public class Settings : AttributesSync
             CalculateAmountOfCards();
             BroadcastRemoteMethod("UpdatePlayersJoined");
         }
-        createToggles();
+        InvokeRemoteMethod("createToggles", gameManager.playerNumber);
         foreach (User user in multiplayer.GetUsers()) if (user.IsHost) hostId = user.Index;
     }
 
@@ -104,19 +105,6 @@ public class Settings : AttributesSync
         amountOfCardsNeeded = (amountOfPeople == 2 || amountOfPeople == 1) ? 3 : 5;
         amountOfCardsNeeded -= CountSingleCardDecks();
         BroadcastRemoteMethod("SetAmountOfCardsNeeded");
-    }
-
-    public void createToggles()
-    {
-        toggleObjects = new List<Toggle>();
-
-        foreach (string cardName in cardNames)
-        {
-            CreateAndNameToggle(cardName);
-        }
-
-        singleCardLocationSpawn = new Vector3(-1.65f, 3.35f, -0.1f);
-        doubleCardLocationSpawn = new Vector3(-7.8f, 3.35f, -0.1f);
     }
 
     public void DestroyToggles()
@@ -189,6 +177,20 @@ public class Settings : AttributesSync
         toggle.GetComponentInChildren<Text>().text = cardName;
         toggleObjects.Add(toggle.GetComponent<Toggle>());
         toggle.name = toggleObjects.IndexOf(toggle.GetComponent<Toggle>()).ToString();
+    }
+
+    [SynchronizableMethod]
+    public void createToggles()
+    {
+        toggleObjects = new List<Toggle>();
+
+        foreach (string cardName in cardNames)
+        {
+            CreateAndNameToggle(cardName);
+        }
+
+        singleCardLocationSpawn = new Vector3(-1.65f, 3.35f, -0.1f);
+        doubleCardLocationSpawn = new Vector3(-7.8f, 3.35f, -0.1f);
     }
 
     [SynchronizableMethod]
