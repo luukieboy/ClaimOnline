@@ -32,6 +32,11 @@ public class PlayerInfo
     {
         if (gameManager == null) gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
         cardSpawner = gameManager.cardSpawner;
+        cardPlayed = null;
+        currentHand = new List<Card>();
+        victoryPile = new List<Card>();
+        armyPile = new List<Card>();
+        winningSets = new List<string>();
     }
 
     public void SetupSecondPhase()

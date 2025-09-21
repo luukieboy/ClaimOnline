@@ -23,7 +23,6 @@ public class GameManager : AttributesSync
     public ushort playerNumber;
     public bool readyToContinue = false;
 
-
     private List<Card> cardPile;
     private int maxAmount;
     private List<PlayerRoundInfo> roundInfo = new List<PlayerRoundInfo>();
@@ -163,6 +162,7 @@ public class GameManager : AttributesSync
         valueToBeat = 0;
         winnerPlayerIndex = 0;
         cardPile = new List<Card>();
+        gameStarted = false;
     }
 
     private IEnumerator CreateRoundInfo()
