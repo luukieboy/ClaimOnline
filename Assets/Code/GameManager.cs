@@ -61,6 +61,7 @@ public class GameManager : AttributesSync
     }
     public void ButtonToStartPressed()
     {
+        Debug.Log("CUSTOMLOGSFORLUUK123: GAME STARTED");
         if (amITheHost) StartCoroutine(SetupGame());
     }
 
@@ -270,13 +271,16 @@ public class GameManager : AttributesSync
         // Determine the winner of each faction
         foreach (string currentFaction in settings.chosenSets)
         {
+            Debug.Log("CUSTOMLOGSFORLUUK123" + currentFaction);
             PlayerInfo winnerPlayer = null;
             foreach (PlayerInfo player in players)
             {
                 InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(0.5f);
+                Debug.Log("CUSTOMLOGSFORLUUK123" + winnerPlayerIndex.ToString());
                 if (player.user.Index == winnerPlayerIndex) winnerPlayer = player;
             }
+            Debug.Log("CUSTOMLOGSFORLUUK123" + winnerPlayer.user.Index.ToString());
             winnerPlayer.winningSets.Add(currentFaction);
         }
 
@@ -288,6 +292,7 @@ public class GameManager : AttributesSync
         // Determine who has won the most factions
         foreach (PlayerInfo player in players)
         {
+            Debug.Log("CUSTOMLOGSFORLUUK123" + player.user.Index.ToString() + " " + player.winningSets.Count.ToString());
             if (player.winningSets.Count > winningAmount)
             {
                 winningAmount = player.winningSets.Count;
@@ -297,6 +302,7 @@ public class GameManager : AttributesSync
         // Create a message for each player based on how they did
         foreach (PlayerInfo player in players)
         {
+            Debug.Log("CUSTOMLOGSFORLUUK123" + player.user.Index.ToString());
             string victoryMessage = "";
             if (player.user.Index == winnerIndex) victoryMessage = "You won! \n";
             else victoryMessage = "You lost :( \n";
@@ -304,6 +310,7 @@ public class GameManager : AttributesSync
             string wonSetsText = "Decks you won : ";
             foreach (string factionWon in player.winningSets) wonSetsText += factionWon + ", ";
             if (player.winningSets.Count == 0) wonSetsText += "none";
+            Debug.Log("CUSTOMLOGSFORLUUK123" + wonSetsText);
             InvokeRemoteMethod("WriteVictoryMessage", player.user.Index, victoryMessage, wonSetsText);
         }
     }
@@ -376,14 +383,17 @@ public class GameManager : AttributesSync
     private IEnumerator handOutCards()
     {
         Card randomCard;
+        int j;
 
         for (int i = 0; i < maxAmount; i++)
         {
-            foreach (PlayerInfo player in players)
+            // foreach (PlayerInfo player in players)
+            for (j = 0; j < players.Count; j++)
             {
+                PlayerInfo player = players[j];
                 // Give each player a random card from the cardpile
                 randomCard = cardPile[UnityEngine.Random.Range(0, cardPile.Count)];
-                InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
+                AttributesSync.InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
                 yield return new WaitForSeconds(0.1f);
                 cardPile.Remove(randomCard);
             }

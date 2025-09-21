@@ -28,9 +28,9 @@ public class PlayerCode : AttributesSync
         if (avatar.Owner == multi.Me)
         {
             setupDone = false;
-            // playerInfo = new PlayerInfo(avatar.Owner);
-            // gameManager.localPlayer = playerInfo; // Local player is used for each client to alter their playerInfo
-            // InvokeRemoteMethod("AddToPlayerList", gameManager.settings.hostId);
+            playerInfo = new PlayerInfo(avatar.Owner);
+            gameManager.localPlayer = playerInfo; // Local player is used for each client to alter their playerInfo
+            InvokeRemoteMethod("AddToPlayerList", gameManager.settings.hostId);
         }
     }
 
