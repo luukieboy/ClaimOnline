@@ -163,6 +163,7 @@ public class GameManager : AttributesSync
         winnerPlayerIndex = 0;
         cardPile = new List<Card>();
         gameStarted = false;
+        players = new List<PlayerInfo>();
     }
 
     private IEnumerator CreateRoundInfo()
@@ -423,6 +424,7 @@ public class GameManager : AttributesSync
     {
         SceneManager.UnloadScene("MainGameScene");
         SceneManager.UnloadScene("VictoryScene");
+        gameStarted = false;
     }
 
     [SynchronizableMethod]
