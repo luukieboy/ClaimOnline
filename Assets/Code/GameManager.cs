@@ -57,6 +57,12 @@ public class GameManager : AttributesSync
     void Update()
     {
         if (multiplayer == null) multiplayer = settings.multiplayer;
+        if (Input.GetKeyDown(KeyCode.Escape)) QuitGame();
+        if (Input.GetKeyDown(KeyCode.Backspace))
+        {
+            Debug.Log("Quitting game...");
+            Application.Quit();
+        }
         amITheHost = settings.amITheHost;
     }
     public void ButtonToStartPressed()
@@ -393,7 +399,7 @@ public class GameManager : AttributesSync
                 PlayerInfo player = players[j];
                 // Give each player a random card from the cardpile
                 randomCard = cardPile[UnityEngine.Random.Range(0, cardPile.Count)];
-                AttributesSync.InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
+                InvokeRemoteMethod("SpawnCardSomewhere", player.user.Index, randomCard.faction, randomCard.value, player.user.Index, 1);
                 yield return new WaitForSeconds(0.1f);
                 cardPile.Remove(randomCard);
             }
