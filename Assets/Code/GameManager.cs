@@ -195,7 +195,10 @@ public class GameManager : AttributesSync
         // Move all played Undead cards to the winners victory pile
         foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
         {
-            if (playerRoundInfo.playedCard.faction == "Undead") InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
+            if (playerRoundInfo.playedCard.faction == "Undead") {
+                InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
+                players[winnerIndex].victoryPile.Add(new Card(playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value));
+            }
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -260,9 +263,16 @@ public class GameManager : AttributesSync
             foreach (PlayerRoundInfo playerRoundInfo in roundInfo)
             {
                 // If dwarves are played, give them to the loser
-                if (playerRoundInfo.playedCard.faction == "Dwarves") InvokeRemoteMethod("SpawnCardSomewhere", loserIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, loserIndex, 3);
+                if (playerRoundInfo.playedCard.faction == "Dwarves")
+                {
+                    InvokeRemoteMethod("SpawnCardSomewhere", loserIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, loserIndex, 3);
+                    players[loserIndex].victoryPile.Add(new Card(playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value));
+                }
                 // Give all other cards to the winner
-                else InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
+                else {
+                    InvokeRemoteMethod("SpawnCardSomewhere", winnerIndex, playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value, winnerIndex, 3);
+                    players[winnerIndex].victoryPile.Add(new Card(playerRoundInfo.playedCard.faction, playerRoundInfo.playedCard.value));
+                }
             }
         }
 
@@ -281,14 +291,30 @@ public class GameManager : AttributesSync
         // Determine the winner of each faction
         foreach (string currentFaction in settings.chosenSets)
         {
-            Debug.Log("CUSTOMLOGSFORLUUK, current faction " + currentFaction);
+            // Debug.Log("CUSTOMLOGSFORLUUK, current faction " + currentFaction);
             PlayerInfo winnerPlayer = null;
             foreach (PlayerInfo player in players)
             {
-                Debug.Log("CUSTOMLOGSFORLUUK, checking player " + player.user.Index.ToString());
-                InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
+                // Debug.Log("CUSTOMLOGSFORLUUK, checking player " + player.user.Index.ToString());
+                // InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
+                int playerNumberOfCards = 0;
+                int playerHighestValue = 0;
+
+                foreach (Card card in player.victoryPile)
+                {
+                    if (card.faction == currentFaction) playerNumberOfCards += 1;
+                    if (card.value > playerHighestValue) playerHighestValue = card.value;
+                }
+
+                if (playerNumberOfCards > numberToBeat || (playerNumberOfCards == numberToBeat && playerHighestValue > valueToBeat))
+                {
+                    numberToBeat = playerNumberOfCards;
+                    numberToBeat = playerHighestValue;
+                    winnerPlayerIndex = playerNumber;
+                }
+
                 yield return new WaitForSeconds(0.5f);
-                Debug.Log("CUSTOMLOGSFORLUUK123, winning player index, " + winnerPlayerIndex.ToString());
+                // Debug.Log("CUSTOMLOGSFORLUUK123, winning player index, " + winnerPlayerIndex.ToString());
                 if (player.user.Index == winnerPlayerIndex) winnerPlayer = player;
             }
             Debug.Log("CUSTOMLOGSFORLUUK123, winner player user index, " + winnerPlayer.user.Index.ToString());
@@ -462,7 +488,6 @@ public class GameManager : AttributesSync
 
         foreach (Card card in localPlayer.victoryPile)
         {
-            Debug.Log(card + " " + card.faction);
             if (card.faction == currentFaction) playerNumberOfCards += 1;
             if (card.value > playerHighestValue) playerHighestValue = card.value;
         }
