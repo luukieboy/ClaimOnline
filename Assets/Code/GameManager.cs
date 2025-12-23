@@ -299,6 +299,7 @@ public class GameManager : AttributesSync
                 // InvokeRemoteMethod("GetFactionNumbers", player.user.Index, currentFaction);
                 int playerNumberOfCards = 0;
                 int playerHighestValue = 0;
+                Debug.Log("Victory hand of " + player.user.Index + " has " + player.victoryPile.Count);
 
                 foreach (Card card in player.victoryPile)
                 {
