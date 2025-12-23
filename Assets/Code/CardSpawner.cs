@@ -37,6 +37,7 @@ public class CardSpawner : AttributesSync
     public void spawnCardInVictoryHand(Card cardInfo, ushort Id)
     {
         int victoryHandSize = gameManager.localPlayer.victoryPile.Count;
+        Debug.Log("Adding card to victory pile of " + gameManager.localPlayer.user.Index);
         gameManager.localPlayer.victoryPile.Add(spawnCardAtLocation(cardInfo, new Vector3(6f + 0.4f * victoryHandSize - 2.8f * (victoryHandSize / 7), 3.8f - 2.5f * (victoryHandSize / 7), 0.0f - victoryHandSize * 0.3f), new Vector3(1.5f, 2, 1), "NO"));
     }
     public Card spawnCardAtLocation(Card cardInfo, Vector3 location, Vector3 size, string newTag)

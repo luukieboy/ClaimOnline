@@ -14,6 +14,8 @@ public class GameManager : AttributesSync
     // Only the host runs most of the code
 
     public bool gameStarted;
+
+    public bool testing = true;
     public Multiplayer multiplayer;
     public GameObject cardPrefab;
     public List<PlayerInfo> players = new List<PlayerInfo>();
@@ -104,7 +106,8 @@ public class GameManager : AttributesSync
             PlayerInfo winner = DetermineWinnerFirstPhase();
             // Highlight the winner in green
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
-            yield return new WaitForSeconds(3f);
+            if (testing) yield return new WaitForSeconds(0.3f);
+            else yield return new WaitForSeconds(3f);
             StartCoroutine(MoveCardsFirstPhase(winner.user.Index));
             yield return new WaitForSeconds(0.5f);
 
@@ -141,7 +144,8 @@ public class GameManager : AttributesSync
             PlayerInfo winner = DetermineWinnerSecondPhase();
             // Highlight the winner in green
             BroadcastRemoteMethod("ShowWinner", (ushort)players.IndexOf(winner));
-            yield return new WaitForSeconds(3f);
+            if (testing) yield return new WaitForSeconds(0.3f);
+            else yield return new WaitForSeconds(3f);
             MoveCardsSecondPhase(winner.user.Index);
             yield return new WaitForSeconds(0.5f);
 
