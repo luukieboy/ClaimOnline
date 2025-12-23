@@ -48,7 +48,7 @@ public class PlayerCode : AttributesSync
                     playerInfo = new PlayerInfo(avatar.Owner);
                     gameManager.localPlayer = playerInfo;
                     setupDone = true;
-                    InvokeRemoteMethod("AddToPlayerList", gameManager.settings.hostId);
+                    // InvokeRemoteMethod("AddToPlayerList", gameManager.settings.hostId);
                 }
 
                 Vector2 mousePosition = GameObject.Find("secondCamera").GetComponent<Camera>().ScreenToWorldPoint(Input.mousePosition);
