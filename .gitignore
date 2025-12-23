@@ -5,6 +5,7 @@
 [Ll]ogs/
 MemoryCaptures/
 UserSettings/
+Logs/
 
 # Rider/VSCode/Visual Studio project files
 *.csproj
